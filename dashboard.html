@@ -11,36 +11,15 @@
             margin: 0;
             padding: 20px;
         }
-        .login-container, .dashboard-container {
-            max-width: 900px;
-            margin: 50px auto;
+        .dashboard-container {
+            max-width: 1100px;
+            margin: 30px auto;
             background: white;
             padding: 30px;
             border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            text-align: center;
+            text-align: right;
         }
-        .dashboard-container { display: none; text-align: right; max-width: 1100px; }
-        input[type="password"] {
-            padding: 12px;
-            font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            width: 250px;
-            margin-left: 10px;
-        }
-        button {
-            padding: 12px 20px;
-            font-size: 16px;
-            background: #4f46e5;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-        button:hover { background: #4338ca; }
-        .error { color: #e53e3e; margin-top: 10px; display: none; }
-        
         table {
             width: 100%;
             border-collapse: collapse;
@@ -56,21 +35,14 @@
         img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; cursor: pointer; }
         a { color: #2563eb; text-decoration: none; font-weight: bold; }
         a:hover { text-decoration: underline; }
-        h2 { color: #1e293b; }
+        h2 { color: #1e293b; text-align: center; }
+        p { text-align: center; color: #64748b; }
     </style>
 </head>
 <body>
 
-    <div class="login-container" id="loginBox">
-        <h2>🔒 لوحة التحكم الآمنة</h2>
-        <p>الرجاء إدخال كلمة المرور للوصول إلى السجلات:</p>
-        <input type="password" id="passInput" placeholder="كلمة المرور">
-        <button onclick="checkLogin()">دخول</button>
-        <div class="error" id="errorMsg">كلمة المرور غير صحيحة!</div>
-    </div>
-
-    <div class="dashboard-container" id="dashBox">
-        <h2>📊 سجلات الحضور والمواقع التقاطية</h2>
+    <div class="dashboard-container">
+        <h2>📊 لوحة تحكم سجلات الحضور والمواقع</h2>
         <p>البيانات يتم تحديثها مباشرة من Google Sheets</p>
         <div style="overflow-x: auto;">
             <table>
@@ -91,27 +63,8 @@
     </div>
 
     <script>
+        // رابط السكريبت الخاص بك
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzS3Siq7uh6lawPsafgjKWALIv-xtUMCVEsM3nkR2zd6PUTb6-xKTJ6imcjrt8V3OJd/exec";
-
-        async function checkLogin() {
-            const pass = document.getElementById("passInput").value;
-            const errorMsg = document.getElementById("errorMsg");
-            
-            try {
-                let res = await fetch(`${SCRIPT_URL}?action=verify&pass=${encodeURIComponent(pass)}`);
-                let data = await res.json();
-                
-                if (data.success) {
-                    document.getElementById("loginBox").style.display = "none";
-                    document.getElementById("dashBox").style.display = "block";
-                    loadData();
-                } else {
-                    errorMsg.style.display = "block";
-                }
-            } catch (e) {
-                alert("حدث خطأ في الاتصال بالخادم.");
-            }
-        }
 
         async function loadData() {
             try {
@@ -154,6 +107,9 @@
                 document.getElementById("dataTable").innerHTML = `<tr><td colspan="5">فشل في تحميل البيانات.</td></tr>`;
             }
         }
+
+        // جلب البيانات فور فتح الصفحة
+        loadData();
     </script>
 </body>
 </html>
