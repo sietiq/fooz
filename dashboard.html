@@ -61,7 +61,6 @@
 </head>
 <body>
 
-    <!-- نافذة تسجيل الدخول -->
     <div class="login-container" id="loginBox">
         <h2>🔒 لوحة التحكم الآمنة</h2>
         <p>الرجاء إدخال كلمة المرور للوصول إلى السجلات:</p>
@@ -70,7 +69,6 @@
         <div class="error" id="errorMsg">كلمة المرور غير صحيحة!</div>
     </div>
 
-    <!-- لوحة عرض البيانات -->
     <div class="dashboard-container" id="dashBox">
         <h2>📊 سجلات الحضور والمواقع التقاطية</h2>
         <p>البيانات يتم تحديثها مباشرة من Google Sheets</p>
@@ -93,8 +91,7 @@
     </div>
 
     <script>
-        // تم تحديث الرابط الجديد هنا تلقائياً
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzdidC1yKi3VaCbr0dyXebkYSM4J332qk8ScSFgFzRwqOb_SWWWArf5awdY_zg91bbm/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzORAP77Ahy7bjo3vk_mfJ-2sv8YhbTpVaTzdwghNrGdKkHdj8LZQynQ8NGL4HO9rAR/exec";
 
         async function checkLogin() {
             const pass = document.getElementById("passInput").value;
