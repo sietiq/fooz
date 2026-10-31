@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم - سجل الحضور والمشاركات</title>
+    <style>
+        body {
+            font-family: Tahoma, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+        }
+        .login-container, .dashboard-container {
+            max-width: 900px;
+            margin: 50px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .dashboard-container { display: none; text-align: right; max-width: 1100px; }
+        input[type="password"] {
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            width: 250px;
+            margin-left: 10px;
+        }
+        button {
+            padding: 12px 20px;
+            font-size: 16px;
+            background: #4f46e5;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        button:hover { background: #4338ca; }
+        .error { color: #e53e3e; margin-top: 10px; display: none; }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #e2e8f0;
+            padding: 12px;
+            text-align: center;
+            font-size: 14px;
+        }
+        th { background: #f8fafc; color: #334155; }
+        img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; cursor: pointer; }
+        a { color: #2563eb; text-decoration: none; font-weight: bold; }
+        a:hover { text-decoration: underline; }
+        h2 { color: #1e293b; }
+    </style>
+</head>
+<body>
+
+    <!-- نافذة تسجيل الدخول -->
+    <div class="login-container" id="loginBox">
+        <h2>🔒 لوحة التحكم الآمنة</h2>
+        <p>الرجاء إدخال كلمة المرور للوصول إلى السجلات:</p>
+        <input type="password" id="passInput" placeholder="كلمة المرور">
+        <button onclick="checkLogin()">دخول</button>
+        <div class="error" id="errorMsg">كلمة المرور غير صحيحة!</div>
+    </div>
+
+    <!-- لوحة عرض البيانات -->
+    <div class="dashboard-container" id="dashBox">
+        <h2>📊 سجلات الحضور والمواقع التقاطية</h2>
+        <p>البيانات يتم تحديثها مباشرة من Google Sheets</p>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>الوقت والتاريخ</th>
+                        <th>عنوان الـ IP</th>
+                        <th>معلومات الجهاز</th>
+                        <th>الموقع الجغرافي (اضغط للفتح)</th>
+                        <th>الصورة الملتقطة</th>
+                    </tr>
+                </thead>
+                <tbody id="dataTable">
+                    <tr><td colspan="5">جاري جلب البيانات...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // تم تحديث الرابط الجديد هنا تلقائياً
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzdidC1yKi3VaCbr0dyXebkYSM4J332qk8ScSFgFzRwqOb_SWWWArf5awdY_zg91bbm/exec";
+
+        async function checkLogin() {
+            const pass = document.getElementById("passInput").value;
+            const errorMsg = document.getElementById("errorMsg");
+            
+            try {
+                let res = await fetch(`${SCRIPT_URL}?action=verify&pass=${encodeURIComponent(pass)}`);
+                let data = await res.json();
+                
+                if (data.success) {
+                    document.getElementById("loginBox").style.display = "none";
+                    document.getElementById("dashBox").style.display = "block";
+                    loadData();
+                } else {
+                    errorMsg.style.display = "block";
+                }
+            } catch (e) {
+                alert("حدث خطأ في الاتصال بالخادم.");
+            }
+        }
+
+        async function loadData() {
+            try {
+                let res = await fetch(`${SCRIPT_URL}?action=getData`);
+                let rows = await res.json();
+                let tbody = document.getElementById("dataTable");
+                tbody.innerHTML = "";
+
+                if (rows.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5">لا توجد سجلات حتى الآن.</td></tr>`;
+                    return;
+                }
+
+                rows.forEach(row => {
+                    let time = row[0] ? new Date(row[0]).toLocaleString('ar-EG') : "-";
+                    let ip = row[1] || "-";
+                    let device = row[2] || "-";
+                    let loc = row[3] || "-";
+                    let imgUrl = row[4] || "";
+
+                    let locHtml = loc;
+                    if (loc.includes(",")) {
+                        let coords = loc.trim();
+                        locHtml = `<a href="https://www.google.com/maps?q=${coords}" target="_blank">📍 عرض الموقع على الخريطة</a>`;
+                    }
+
+                    let imgHtml = imgUrl.startsWith("http") ? `<a href="${imgUrl}" target="_blank"><img src="${imgUrl}" alt="صورة"></a>` : "لا توجد صورة";
+
+                    let tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td>${time}</td>
+                        <td>${ip}</td>
+                        <td><small>${device}</small></td>
+                        <td>${locHtml}</td>
+                        <td>${imgHtml}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (e) {
+                document.getElementById("dataTable").innerHTML = `<tr><td colspan="5">فشل في تحميل البيانات.</td></tr>`;
+            }
+        }
+    </script>
+</body>
+</html>
